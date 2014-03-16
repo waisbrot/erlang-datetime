@@ -44,8 +44,8 @@
 
 -module(datetime).
 -author('lkiesow@uos.de').
--export([ datetime_encode/3, datetime_encode/2, datetime_encode/1,
-		datetime_encode/0, datetime_decode/1, datetime_decode/2 ]).
+-export([ encode/3, encode/2, encode/1,
+		encode/0, decode/1, decode/2 ]).
 
 %% Takes a numerical representation of a month and returns its representation
 %% as a list of three characters.
@@ -184,7 +184,7 @@ expand_year( Year, BaseYear ) ->
 %% Convert a erlang datetime struct to its string representation according to
 %% either RFC822 or the RSS specification.
 %%
-%% datetime_encode( DateTime, TimeZone, SpecType )
+%% encode( DateTime, TimeZone, SpecType )
 %%                     |         |         +------- Defaults to 'rfc2822'
 %%                     |         +------- Defaults to 'GMT'
 %%                     +------- Defaults to erlang:universaltime()
@@ -203,65 +203,65 @@ expand_year( Year, BaseYear ) ->
 %%         comments are not supported at the moment. At they will probably
 %%         never be supported as they are basically never used in the real
 %%         world.
-datetime_encode({{Year,Mon,Day},{Hour,Min,Sec}}, 'GMT', rfc822) when is_float(Sec) ->
-    datetime_encode({{Year, Mon, Day},{Hour, Min, round(Sec)}}, 'GMT', rfc822);
+encode({{Year,Mon,Day},{Hour,Min,Sec}}, 'GMT', rfc822) when is_float(Sec) ->
+    encode({{Year, Mon, Day},{Hour, Min, round(Sec)}}, 'GMT', rfc822);
 
-datetime_encode( {Date={Year,Mon,Day},{Hour,Min,Sec}}, 'GMT', rfc822 ) ->
+encode( {Date={Year,Mon,Day},{Hour,Min,Sec}}, 'GMT', rfc822 ) ->
 	lists:flatten(io_lib:format( "~s, ~B ~s ~2..0B ~2..0B:~2..0B:~2..0B ~s", [
 			get_day_name( Date ),
 			Day, month_name(Mon), (Year rem 1000),
 			Hour, Min, Sec, '+0000' ] ));
 
-datetime_encode({{Year,Mon,Day},{Hour,Min,Sec}}, 'GMT', rss ) when is_float(Sec) ->
-    datetime_encode({{Year, Mon, Day}, {Hour, Min, round(Sec)}}, 'GMT', rss);
+encode({{Year,Mon,Day},{Hour,Min,Sec}}, 'GMT', rss ) when is_float(Sec) ->
+    encode({{Year, Mon, Day}, {Hour, Min, round(Sec)}}, 'GMT', rss);
 
-datetime_encode( {Date={Year,Mon,Day},{Hour,Min,Sec}}, 'GMT', rss ) ->
+encode( {Date={Year,Mon,Day},{Hour,Min,Sec}}, 'GMT', rss ) ->
 	lists:flatten(io_lib:format( "~s, ~B ~s ~4..0B ~2..0B:~2..0B:~2..0B ~s", [
 			get_day_name( Date ),
 			Day, month_name(Mon), Year,
 			Hour, Min, Sec, '+0000' ] ));
 
-datetime_encode({{Year, Mon, Day}, {Hour, Min, Sec}}, 'GMT', rfc2822) when is_float(Sec) ->
-    datetime_encode({{Year, Mon, Day}, {Hour, Min, round(Sec)}}, 'GMT', rfc2822);
+encode({{Year, Mon, Day}, {Hour, Min, Sec}}, 'GMT', rfc2822) when is_float(Sec) ->
+    encode({{Year, Mon, Day}, {Hour, Min, round(Sec)}}, 'GMT', rfc2822);
 
-datetime_encode( {Date={Year,Mon,Day},{Hour,Min,Sec}}, 'GMT', rfc2822 ) ->
+encode( {Date={Year,Mon,Day},{Hour,Min,Sec}}, 'GMT', rfc2822 ) ->
 	lists:flatten(io_lib:format( "~s, ~B ~s ~4..0B ~2..0B:~2..0B:~2..0B ~s", [
 			get_day_name( Date ),
 			Day, month_name(Mon), Year,
 			Hour, Min, Sec, '+0000' ] ));
 
-datetime_encode( DateTime, Zone, Type ) ->
+encode( DateTime, Zone, Type ) ->
 	Secs  = calendar:datetime_to_gregorian_seconds( DateTime ),
 	{H,M} = timezone_offset( Zone ),
 	UTCDateTime = calendar:gregorian_seconds_to_datetime(Secs+(M*60)+(H*3600)),
-	datetime_encode( UTCDateTime, 'GMT', Type ).
+	encode( UTCDateTime, 'GMT', Type ).
 
 
-datetime_encode( DateTime, Type ) ->
-	datetime_encode( DateTime, Type, rfc2822 ).
+encode( DateTime, Type ) ->
+	encode( DateTime, Type, rfc2822 ).
 
 
-datetime_encode( {MegaSecs,Secs,MicroSecs} ) ->
-	datetime_encode(
+encode( {MegaSecs,Secs,MicroSecs} ) ->
+	encode(
 		calendar:now_to_datetime({MegaSecs,Secs,MicroSecs}),
 		'GMT', rfc2822 );
 
-datetime_encode( DateTime ) ->
-	datetime_encode( DateTime, 'GMT', rfc2822 ).
+encode( DateTime ) ->
+	encode( DateTime, 'GMT', rfc2822 ).
 
 
-datetime_encode() ->
-	datetime_encode( erlang:universaltime(), 'GMT', rfc2822 ).
+encode() ->
+	encode( erlang:universaltime(), 'GMT', rfc2822 ).
 
 
 %% Converts a DateTime string according to rfc822 or RSS specifications into an
 %% erlang datetime tupel. The first parameter is the datetime string, the
 %% second specifies the handling of years represented as two digits as
 %% described next to expand_year/2. The latter defaults to 'smart'.
-datetime_decode( D, Y ) when is_binary(D) ->
-	datetime_decode( binary_to_list(D), Y );
+decode( D, Y ) when is_binary(D) ->
+	decode( binary_to_list(D), Y );
 
-datetime_decode( DateTimeStr, YearHandling ) ->
+decode( DateTimeStr, YearHandling ) ->
 	[StrDay,StrMon,StrYear,StrTime,Zone] =
 		string:tokens( lists:last(string:tokens( DateTimeStr, ",")), " "),
 	Year = expand_year(list_to_integer(StrYear), YearHandling ),
@@ -275,5 +275,5 @@ datetime_decode( DateTimeStr, YearHandling ) ->
 	calendar:gregorian_seconds_to_datetime(UTCSecs).
 
 
-datetime_decode( DateTimeStr ) ->
-	datetime_decode( DateTimeStr, smart ).
+decode( DateTimeStr ) ->
+	decode( DateTimeStr, smart ).
