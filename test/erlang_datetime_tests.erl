@@ -34,3 +34,19 @@ rfc2822_encode_test() ->
      ?assertEqual("Mon, 28 Feb 2000 10:29:00 +0000", datetime:encode({{2000,2,28},{10,29,0}}, "GMT", rfc2822))
     ,?assertEqual("Mon, 28 Feb 2000 05:29:00 +0000", datetime:encode({{2000,2,28},{10,29,0}}, "EST", rfc2822))
     ].
+
+bad_datetime_test() ->
+    [
+     ?assertError(_, datetime:decode("1 1 2 3"))
+    ,?assertError(_, datetime:decode("Sat, 88 Mar 2014 01:11 GMT"))
+    ,?assertError(_, datetime:decode("Sat, 8 Bar 2014 01:11 GMT"))
+    ,?assertError(_, datetime:decode("Sat, 8 Mar 2014 01:11 LOL"))
+    ].
+
+surprising_ok_test() ->
+    [
+     ?assertEqual({{2014,3,8},{1,11,0}}, datetime:decode("Bogusday, 8 Mar 2014 01:11 GMT"))
+    ,?assertEqual({{1500000,3,8},{1,11,0}}, datetime:decode("Sat, 8 Mar 1500000 01:11 GMT"))
+    ,?assertEqual({{2014,3,10},{0,11,0}}, datetime:decode("Sat, 8 Mar 2014 48:11 GMT"))
+    ,?assertEqual({{2014,3,8},{2,40,0}}, datetime:decode("8 Mar 2014 01:100 GMT"))
+    ].
